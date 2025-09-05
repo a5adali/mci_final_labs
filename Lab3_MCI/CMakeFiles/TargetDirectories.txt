@@ -1,0 +1,6 @@
+/home/asad/mci_final_labs/Lab3_MCI/CMakeFiles/Lab3_MCI.dir
+/home/asad/mci_final_labs/Lab3_MCI/CMakeFiles/edit_cache.dir
+/home/asad/mci_final_labs/Lab3_MCI/CMakeFiles/rebuild_cache.dir
+/home/asad/mci_final_labs/Lab3_MCI/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+/home/asad/mci_final_labs/Lab3_MCI/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+/home/asad/mci_final_labs/Lab3_MCI/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir

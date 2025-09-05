@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head></head>
+<body>
+<h3>Introduction</h3>
+
+
+STM32CubeMX is a graphical tool for 32-bit ARM&reg; Cortex&reg; STM32
+microcontrollers. It is part of STMCube&trade; initiative and is available
+either as a standalone application or as an Eclipse plug-in for
+integration in Integrated Development Environments (IDEs).<br>
+<br>
+STM32CubeMX has the following key features:<br>
+<ul>
+<li>Easy microcontroller selection covering whole STM32 portfolio.</li>
+<li>Board selection from a list of STMicroelectronics boards.</li>
+<li>Easy microcontroller configuration (pins, clock tree, peripherals, middleware) and generation of the corresponding initialization C code.</li>
+<li>Easy switching to another microcontroller belonging to the same series by importing a previously-saved configuration to a new MCU project.</li>
+<li>Generation of configuration reports.</li>
+<li>Generation of IDE ready projects for a selection of integrated development environment tool chains. STM32CubeMX projects include the
+generated initialization C code, STM32 HAL drivers, the middleware
+stacks required for the user configuration, and all the relevant files
+needed to open and build the project in the selected IDE.</li>
+<li>Power consumption calculation for a user-defined application sequence.</li>
+<li>Self-updates allowing the user to keep the STM32CubeMX up-to-date.</li>
+<li>Download and update of STM32Cube embedded software required for user application development (see Appendix E: STM32Cube embedded software
+packages for details on STM32Cube embedded software offer).</li>
+</ul>
+<br>
+<h3>Installing, running and uninstalling STM32CubeMX 6.15.0<br></h3>
+
+<b>Supported toolchains</b><br>
+STM32CubeMX generates project files for the following toolchains:
+<ul>
+<li>STM32CubeIDE by STMicroelectronics</li>
+<li>IAR Embedded Workbench® for Arm® (EWARM) by IAR systems&reg</li>
+<li>Microcontroller Development kit for Arm® by Keil®: MDK-ARM V4 or V5 (minimum required version V4.73)</li>
+</ul>
+
+<b>Supported operating systems and architectures</b>
+<ul>
+<li>Windows&reg;: 10 and 11, 64-bits (x64)</li>
+<li>Linux&reg;: Ubuntu&reg; LTS and LTS 24.04, and Fedora&reg 41</li>
+<li>macOS&reg;: 12 (Monterey), macOS&reg; 13(Ventura), macOS&reg; 14(Sonoma), macOS&reg; 15(Sequoia) </li>
+</ul><br>
+
+<h4>Software requirements</h4>
+Administrator rights are required to download the update package and at next 
+launch to complete the update process.<br>
+<br>STM32CubeMX embeds the Java Runtime Environment (JRE&trade;) required for its execution and no longer uses the one installed on the user machine.
+<br><br>Note: The bundled JRE&trade; is Adoptium Temurin 21.0.3 and JavaFX-17.0.11. <a href="https://adoptium.net/">(https://adoptium.net/</a>). <br>
+The JRE&trade; version constraints are:<br>
+<ul>
+<li>64 bits version mandatory. 32 bits version not supported.</li>
+<li>Minimal JRE version is 17.0.6.</li>
+</ul>
+<br>
+
+<br>
+<b>MacOS Software requirements:</b>
+<ul>
+<li>Xcode must be installed On MacOS computers</li>
+<li>Both Xcode and Rosetta must be installed on MacOS computers embedding Apple M1 processor.</li>
+</ul>
+<br>
+<h4>Installing STM32CubeMX standalone version</h4>
+To install STM32CubeMX, make sure you have administrator rights and follow the steps below: 
+<ul>
+<li>From an internet browser, open the page : <a href="http://www.st.com/stm32cubemx">http://www.st.com/stm32cubemx</a></li>
+<li>Click Get Software to go to the software download section.</li>
+</ul>
+<br>
+<b>On Windows&reg;:</b>
+<ul>
+<li>On STM32CubeMX-Win line, click &quot;Get software&quot; to download the package.</li>
+<li>Extract (unzip) the downloaded package.</li>
+<li>Make sure you have administrators rights.</li>
+<li>Double-click on SetupSTM32CubeMX-6.15.0-Win.exe to launch the installation wizard.</li>
+</ul>
+<b>On Linux&reg;:</b>
+<ul>
+<li>On STM32CubeMX-Lin line, click &quot;Get software&quot; to download the package.</li>
+<li>Extract (unzip) the downloaded package.</li>
+<li>Make sure you have administrator rights to access the target installation directory. You can run the installation as root (or sudo) to install STM32CubeMX in shared directories.</li>
+<li>Do chmod 777 SetupSTM32CubeMX-6.15.0 to change the properties, so that the file is executable.</li>
+<li>Double-click on the SetupSTM32CubeMX-6.15.0 file, or launch it from the console window.</li>
+</ul>
+<b>On MacOS&reg;:</b>
+<ul>
+<li>On STM32CubeMX-Mac line, click &quot;Get software&quot; to download the package.</li>
+<li>Extract (unzip) the downloaded package.</li>
+<li>Make sure you have administrators rights.</li>
+<li>Double-click SetupSTM32CubeMX-6.15.0.app application file to launch the installation wizard.<br>
+In case of error, try one of the following fixes: - $sudo xattr -cr ~/SetupSTM32CubeMX-6.15.0.app.</li>
+</ul>
+<li>Upon successful installation of STM32CubeMX on Windows, STM32CubeMX icon is
+displayed on your desktop and STM32CubeMX application is available from the
+Program menu. <br>
+STM32CubeMX .ioc files are displayed with a cube icon. <br>
+Double-click them to open up them using STM32CubeMX.</li>
+<li>Delete the content of the zip from your disk.</li>
+<li>Please refer to the STM32CubeMX user manual for more details on System requirements or other possible installations.</li>
+
+
+<h4>Running STM32CubeMX as standalone application</h4>
+<ul>
+<li>To run STM32CubeMX as a standalone application on Windows: </li>
+<ul>
+<li>Select STM32CubeMX from Program Files &gt; ST Microelectronics &gt; STM32CubeMX.</li>
+<li>Or double-click STM32CubeMX icon on your desktop.</li>
+</ul>
+<li>To run STM32CubeMX as a standalone application on Linux, launch the STM32CubeMX
+executable from STM32CubeMX installation directory.</li>
+<li>To run STM32CubeMX as a standalone application on macOS&reg;, launch the STM32CubeMX
+application from the launchpad.</li><br>
+</ul>
+<h4>Uninstalling STM32CubeMX standalone version</h4>
+<h5>Uninstalling STM32CubeMX on Windows&reg;</h5>
+There are three different ways to uninstall STM32CubeMX on Windows:
+<ul>
+<li>Through the Windows Control Panel:</li>
+<ul>
+<li>Select Programs and Features from the Windows Control Panel to display the
+list of programs installed on your computer.</li>
+<li>Right-click STM32CubeMX and select uninstall.</li>
+</ul></ul>
+<ul>
+<li>From a shell prompt with admin rights, by using the following commands:</li>
+<ul>
+<li>For STM32CubeMX 6.2.x and later versions: </li>
+<blockquote>cd <i>&lt;STM32CubeMX installation path&gt;</i>/Uninstaller</blockquote>
+<blockquote>uninstall.bat </blockquote>
+<li>For STM32CubeMX 6.1.x and older versions:</li> 
+<blockquote>java -jar <i>&lt;STM32CubeMX installation path&gt;</i>/Uninstaller/uninstaller.jar</blockquote>
+</ul>
+<li>Through a Windows File Explorer window:</li>
+<ul>
+<li>For STM32CubeMX 6.2.x and later versions: </li>
+<ul>
+<li>Go to the Uninstaller directory folder in STM32CubeMX installation directory.</li>
+<li>Right-click the uninstall.bat and &quot;run as administrator&quot;.</li>
+</ul>
+<li>For STM32CubeMX 6.1.x and older versions only: </li>
+<ul>
+<li>Go to the Uninstaller directory folder in STM32CubeMX installation directory.</li>
+<li>double-click startuninstall.exe or double-click the uninstall shortcut on the desktop.</li>
+</ul>
+</ul><br>
+</ul>
+<h5>Uninstalling STM32CubeMX on macOS&reg;</h5>
+There are two different ways to uninstall STM32CubeMX on Mac:
+<ul>
+<li>Move STM32CubeMX.6.15.0.app to the trash </li>
+</ul>
+<ul>
+<li>Or use the following command line: 
+<ul>
+<li>For STM32CubeMX 6.2.x and later versions: </li>
+<blockquote>cd <i>&lt;STM32CubeMX installation path&gt;</i>/Uninstaller</blockquote>
+<blockquote>./uninstall.sh </blockquote>
+<li>For STM32CubeMX 6.1.x and older versions:</li> 
+<blockquote>java -jar <i>&lt;STM32CubeMX installation path&gt;</i>/Uninstaller/uninstaller.jar</blockquote>
+</ul></li>
+</ul><br>
+</ul>
+<h5>Uninstalling STM32CubeMX on Linux&reg;</h5>
+There are two different ways to uninstall STM32CubeMX on Mac:
+<ul>
+<li>From a shell prompt by launching the uninstall script : 
+<ul>
+<li>For STM32CubeMX 6.2.x and later versions: </li>
+<blockquote>cd <i>&lt;STM32CubeMX installation path&gt;</i>/Uninstaller</blockquote>
+<blockquote>uninstall.sh </blockquote>
+<li>For STM32CubeMX 6.1.x and older versions:</li> 
+<blockquote>java -jar <i>&lt;STM32CubeMX installation path&gt;</i>/Uninstaller/uninstaller.jar</blockquote>
+</ul></li>
+<li>From a File Explorer :</li> 
+<ul>
+<li>Go to <i>&lt;STM32CubeMX installation path&gt;</i>/Uninstaller.</li>
+<li>For STM32CubeMX 6.2.x and later versions: Double-click the uninstall.sh script.</li>
+<li>For STM32CubeMX 6.1.x and older versions: Double-click the start uninstall desktop shortcut.</li> 
+</ul>
+</ul>
+</ul>
+<br>
+</body></html>
