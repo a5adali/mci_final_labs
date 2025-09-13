@@ -106,11 +106,15 @@ void display_number(uint8_t num) {
     HAL_GPIO_WritePin(SEG_PORT, SEG_F, (pattern & 0x20) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(SEG_PORT, SEG_G, (pattern & 0x40) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
-uint8_t studentID[] = {0,9,2,8,1};
-uint8_t idLength = 5;
-uint8_t currentIndex = 0;
-uint8_t buttonState = 0;
-uint8_t lastButtonState = 0;
+// uint8_t studentID[] = {0,9,2,8,1};
+// uint8_t idLength = 5;
+// uint8_t currentIndex = 0;
+// uint8_t buttonState = 0;
+// uint8_t lastButtonState = 0;
+
+uint8_t counter = 0;
+uint8_t buttonStatePA0 = 0, lastButtonStatePA0 = 0;
+uint8_t buttonStatePB5 = 0, lastButtonStatePB5 = 0;
 
 /* USER CODE END 0 */
 
@@ -154,43 +158,71 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   // while (1)
   // {
-  //   /* USER CODE END WHILE */
-  //   for (uint8_t i = 0; i < 16; i++) {
-  //     display_number(i);
-  //     HAL_Delay(2000); // 2 seconds delay
-  //   }
-  //   /* USER CODE BEGIN 3 */
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   // }
 
   //TASK 2
-  while (1)
-{
-    // Read button
-    buttonState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+//   while (1)
+// {
+//     // Read button
+//     buttonState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
 
-    // Check if button changed from 0 -> 1 (rising edge)
-    if (buttonState == GPIO_PIN_SET && lastButtonState == GPIO_PIN_RESET)
-    {
-        // Debounce delay
-        HAL_Delay(50);
+//     // Check if button changed from 0 -> 1 (rising edge)
+//     if (buttonState == GPIO_PIN_SET && lastButtonState == GPIO_PIN_RESET)
+//     {
+//         // Debounce delay
+//         HAL_Delay(50);
 
-        // Check again after delay
-        if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
-        {
-            // Display digit
-            display_number(studentID[currentIndex]);
+//         // Check again after delay
+//         if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
+//         {
+//             // Display digit
+//             display_number(studentID[currentIndex]);
 
-            // Go to next digit
-            currentIndex++;
-            if (currentIndex >= idLength)
-                currentIndex = 0;  // Reset to first digit
-        }
-    }
+//             // Go to next digit
+//             currentIndex++;
+//             if (currentIndex >= idLength)
+//                 currentIndex = 0;  // Reset to first digit
+//         }
+//     }
 
-    // Save button state for next loop
-    lastButtonState = buttonState;
-}
+//     // Save button state for next loop
+//     lastButtonState = buttonState;
+// }
   /* USER CODE END 3 */
+  //TASK3
+  while (1)
+  {
+    // --- Increment with USER button (PA0) ---
+    buttonStatePA0 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+    if (buttonStatePA0 == GPIO_PIN_SET && lastButtonStatePA0 == GPIO_PIN_RESET)
+    {
+      HAL_Delay(50); // debounce
+      if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
+      {
+        counter++;
+        if (counter > 15) counter = 0;   // wrap around
+        display_number(counter);
+      }
+    }
+    lastButtonStatePA0 = buttonStatePA0;
+
+    // --- Decrement with external button (PB5) ---
+    buttonStatePB5 = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5);
+    if (buttonStatePB5 == GPIO_PIN_SET && lastButtonStatePB5 == GPIO_PIN_RESET)
+    {
+      HAL_Delay(50); // debounce
+      if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5) == GPIO_PIN_SET)
+      {
+        if (counter == 0) counter = 15;  // wrap around backwards
+        else counter--;
+        display_number(counter);
+      }
+    }
+    lastButtonStatePB5 = buttonStatePB5;
+  }
 }
 
 /**
@@ -431,6 +463,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
