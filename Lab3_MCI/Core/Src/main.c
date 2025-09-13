@@ -18,7 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include <stdlib.h>
+#include <time.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -193,36 +194,56 @@ int main(void)
 // }
   /* USER CODE END 3 */
   //TASK3
-  while (1)
-  {
-    // --- Increment with USER button (PA0) ---
-    buttonStatePA0 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
-    if (buttonStatePA0 == GPIO_PIN_SET && lastButtonStatePA0 == GPIO_PIN_RESET)
-    {
-      HAL_Delay(50); // debounce
-      if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
-      {
-        counter++;
-        if (counter > 15) counter = 0;   // wrap around
-        display_number(counter);
-      }
-    }
-    lastButtonStatePA0 = buttonStatePA0;
+  // while (1)
+  // {
+  //   // --- Increment with USER button (PA0) ---
+  //   buttonStatePA0 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+  //   if (buttonStatePA0 == GPIO_PIN_SET && lastButtonStatePA0 == GPIO_PIN_RESET)
+  //   {
+  //     HAL_Delay(50); // debounce
+  //     if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
+  //     {
+  //       counter++;
+  //       if (counter > 15) counter = 0;   // wrap around
+  //       display_number(counter);
+  //     }
+  //   }
+  //   lastButtonStatePA0 = buttonStatePA0;
 
-    // --- Decrement with external button (PB5) ---
-    buttonStatePB5 = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5);
-    if (buttonStatePB5 == GPIO_PIN_SET && lastButtonStatePB5 == GPIO_PIN_RESET)
+  //   // --- Decrement with external button (PB5) ---
+  //   buttonStatePB5 = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5);
+  //   if (buttonStatePB5 == GPIO_PIN_SET && lastButtonStatePB5 == GPIO_PIN_RESET)
+  //   {
+  //     HAL_Delay(50); // debounce
+  //     if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5) == GPIO_PIN_SET)
+  //     {
+  //       if (counter == 0) counter = 15;  // wrap around backwards
+  //       else counter--;
+  //       display_number(counter);
+  //     }
+  //   }
+  //   lastButtonStatePB5 = buttonStatePB5;
+  // }
+  //TASK4
+  srand(HAL_GetTick());  // seed RNG
+  while (1)
     {
-      HAL_Delay(50); // debounce
-      if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5) == GPIO_PIN_SET)
-      {
-        if (counter == 0) counter = 15;  // wrap around backwards
-        else counter--;
-        display_number(counter);
-      }
+        // Check USER button (PA0)
+        if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
+        {
+            HAL_Delay(50); // debounce delay
+
+            if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
+            {
+                int num = (rand() % 6) + 1;  // random 1–6
+                display_number(num);
+
+                // wait until button released
+                while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET);
+                HAL_Delay(50);  // debounce release
+            }
+        }
     }
-    lastButtonStatePB5 = buttonStatePB5;
-  }
 }
 
 /**
