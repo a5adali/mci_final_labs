@@ -12,7 +12,7 @@
 1134	1251	1757750877888582824	Lab3_MCI.elf	f975c1f778f57b47
 456	961	1757750877600528103	cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_gpio.c.obj	6de897e7ec21bf6c
 728	1127	1757750877767262200	cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi.c.obj	c20b0b68f6f08cae
-1	58	1757749239485349833	build.ninja	f03a89b97d22b992
+1	58	1757929669242466265	build.ninja	f03a89b97d22b992
 831	1067	1757750877707222875	cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi_ex.c.obj	46d044eb5e333793
 859	1134	1757750877774322893	cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_pcd.c.obj	3094937b84451694
 1	547	1757750877180579704	CMakeFiles/Lab3_MCI.dir/Core/Src/main.c.obj	12dcfdc5f5c8dff6

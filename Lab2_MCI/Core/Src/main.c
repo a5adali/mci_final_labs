@@ -119,14 +119,123 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int x=42;
-  float y=3.14;
+  //TASK3
+    // char str[] = "Microcontrollers";
+    // char encrypted[100];
+    // char decrypted[100];
+
+    // // (b) Define encryption key (example: student ID = 09281)
+    // int key = 9281;
+    // int shift = key % 256;   // to keep it in ASCII range
+
+    // int i, len = strlen(str);
+
+    // // (c) Encrypt each character
+    // for (i = 0; i < len; i++) {
+    //     encrypted[i] = str[i] + shift;
+    // }
+    // encrypted[len] = '\0';
+
+    // // (e) Decrypt (reverse operation)
+    // for (i = 0; i < len; i++) {
+    //     decrypted[i] = encrypted[i] - shift;
+    // }
+    // decrypted[len] = '\0';
+
+   
+
+    // // Confirm match
+    // if (strcmp(str, decrypted) == 0) {
+    //     printf("Decryption successful, matches original!\n");
+    // } else {
+    //     printf("Decryption failed.\n");
+    // }
+    //TASK4
+    // int A[2][2] = { {1, 2}, {3, 4} };
+    // int B[2][2] = { {5, 6}, {7, 8} };
+    // int C[2][2];
+    int num, a, b, c, sum;
   while (1)
   {
     /* USER CODE END WHILE */
-    myPrintf("Value of x = %d ,y = %.2f\r \n " , x , y);
-    HAL_Delay(1000);
+    // myPrintf("Value of x = %d , y = %d.%02d\r\n", x, (int)y, (int)((y - (int)y) * 100));
+    // HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
+    //TASK2
+    // myPrintf("a = %d, b = %d\r\n", a, b);
+    // myPrintf("LHS = (a + b)^2 = %d\r\n", LHS);
+    // myPrintf("RHS = a^2 + 2ab + b^2 = %d\r\n", RHS);
+
+    // if (LHS == RHS) {
+    //     myPrintf("Identity holds: (a + b)^2 = a^2 + 2ab + b^2\r\n");
+    // } else {
+    //     myPrintf("Identity does NOT hold.\r\n");
+    // }
+    // HAL_Delay(2000);
+    //TASK3
+    // myPrintf("Original: %s\r\n", str);
+    // myPrintf("Encrypted: %s\r\n", encrypted);
+    // myPrintf("Decrypted: %s\r\n", decrypted);
+    // HAL_Delay(1000);  // print every 1 second
+    //Task4
+    // for (int i = 0; i < 2; i++) {
+    //         for (int j = 0; j < 2; j++) {
+    //             C[i][j] = 0;
+    //             for (int k = 0; k < 2; k++) {
+    //                 C[i][j] += A[i][k] * B[k][j];
+    //             }
+    //         }
+    //     }
+
+    //     // Print Matrix A
+    //     myPrintf("\r\nMatrix A:\r\n");
+    //     for (int i = 0; i < 2; i++) {
+    //         for (int j = 0; j < 2; j++) {
+    //             myPrintf("%d ", A[i][j]);
+    //         }
+    //         myPrintf("\r\n");
+    //     }
+
+    //     // Print Matrix B
+    //     myPrintf("\r\nMatrix B:\r\n");
+    //     for (int i = 0; i < 2; i++) {
+    //         for (int j = 0; j < 2; j++) {
+    //             myPrintf("%d ", B[i][j]);
+    //         }
+    //         myPrintf("\r\n");
+    //     }
+
+    //     // Print Matrix C
+    //     myPrintf("\r\nMatrix C (A x B):\r\n");
+    //     for (int i = 0; i < 2; i++) {
+    //         for (int j = 0; j < 2; j++) {
+    //             myPrintf("%d ", C[i][j]);
+    //         }
+    //         myPrintf("\r\n");
+    //     }
+
+    //     myPrintf("------\r\n");
+
+    //     HAL_Delay(1000); // wait 1 second before printing again
+    myPrintf("\r\nArmstrong numbers between 100 and 999:\r\n");
+
+        // loop through all 3-digit numbers
+        for (num = 100; num <= 999; num++) {
+            a = num / 100;         // hundreds
+            b = (num / 10) % 10;   // tens
+            c = num % 10;          // ones
+
+            sum = (a*a*a) + (b*b*b) + (c*c*c);
+
+            if (sum == num) {
+                myPrintf("%d\r\n", num);
+            }
+        }
+
+        myPrintf("------\r\n");
+
+        HAL_Delay(2000); // wait 2 seconds before repeating
+    
   }
   /* USER CODE END 3 */
 }

@@ -107,11 +107,11 @@ void display_number(uint8_t num) {
     HAL_GPIO_WritePin(SEG_PORT, SEG_F, (pattern & 0x20) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(SEG_PORT, SEG_G, (pattern & 0x40) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
-// uint8_t studentID[] = {0,9,2,8,1};
-// uint8_t idLength = 5;
-// uint8_t currentIndex = 0;
-// uint8_t buttonState = 0;
-// uint8_t lastButtonState = 0;
+ uint8_t studentID[] = {0,9,2,8,1};
+ uint8_t idLength = 5;
+ uint8_t currentIndex = 0;
+ uint8_t buttonState = 0;
+ uint8_t lastButtonState = 0;
 
 uint8_t counter = 0;
 uint8_t buttonStatePA0 = 0, lastButtonStatePA0 = 0;
@@ -157,41 +157,41 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  // while (1)
-  // {
+   while (1)
+   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  // }
+   }
 
   //TASK 2
-//   while (1)
-// {
-//     // Read button
-//     buttonState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+   while (1)
+ {
+     // Read button
+     buttonState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
 
-//     // Check if button changed from 0 -> 1 (rising edge)
-//     if (buttonState == GPIO_PIN_SET && lastButtonState == GPIO_PIN_RESET)
-//     {
-//         // Debounce delay
-//         HAL_Delay(50);
+     // Check if button changed from 0 -> 1 (rising edge)
+     if (buttonState == GPIO_PIN_SET && lastButtonState == GPIO_PIN_RESET)
+     {
+         // Debounce delay
+         HAL_Delay(50);
 
-//         // Check again after delay
-//         if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
-//         {
-//             // Display digit
-//             display_number(studentID[currentIndex]);
+         // Check again after delay
+         if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET)
+         {
+             // Display digit
+             display_number(studentID[currentIndex]);
 
-//             // Go to next digit
-//             currentIndex++;
-//             if (currentIndex >= idLength)
-//                 currentIndex = 0;  // Reset to first digit
-//         }
-//     }
+             // Go to next digit
+             currentIndex++;
+             if (currentIndex >= idLength)
+                 currentIndex = 0;  // Reset to first digit
+         }
+     }
 
-//     // Save button state for next loop
-//     lastButtonState = buttonState;
-// }
+     // Save button state for next loop
+     lastButtonState = buttonState;
+ }
   /* USER CODE END 3 */
   //TASK3
   // while (1)
