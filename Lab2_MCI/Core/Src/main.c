@@ -144,17 +144,27 @@ int main(void)
 
    
 
-    // // Confirm match
+    // Confirm match
     // if (strcmp(str, decrypted) == 0) {
     //     printf("Decryption successful, matches original!\n");
     // } else {
     //     printf("Decryption failed.\n");
     // }
     //TASK4
-    // int A[2][2] = { {1, 2}, {3, 4} };
-    // int B[2][2] = { {5, 6}, {7, 8} };
-    // int C[2][2];
+    int A[2][2] = { {1, 2}, {3, 4} };
+    int B[2][2] = { {5, 6}, {7, 8} };
+    int C[2][2];
     int num, a, b, c, sum;
+    // int x= 3;
+    // float y=3.14; 
+    // int a,b;
+    // int LHS,RHS;
+
+    // a=5;
+    // b=3;
+
+    // LHS = (a+b) * (a+b);
+    // RHS = (a*a) + (b*b) + (2*a*b);
   while (1)
   {
     /* USER CODE END WHILE */
@@ -178,45 +188,45 @@ int main(void)
     // myPrintf("Decrypted: %s\r\n", decrypted);
     // HAL_Delay(1000);  // print every 1 second
     //Task4
-    // for (int i = 0; i < 2; i++) {
-    //         for (int j = 0; j < 2; j++) {
-    //             C[i][j] = 0;
-    //             for (int k = 0; k < 2; k++) {
-    //                 C[i][j] += A[i][k] * B[k][j];
-    //             }
-    //         }
-    //     }
+    for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                C[i][j] = 0;
+                for (int k = 0; k < 2; k++) {
+                    C[i][j] += A[i][k] * B[k][j];
+                }
+            }
+        }
 
-    //     // Print Matrix A
-    //     myPrintf("\r\nMatrix A:\r\n");
-    //     for (int i = 0; i < 2; i++) {
-    //         for (int j = 0; j < 2; j++) {
-    //             myPrintf("%d ", A[i][j]);
-    //         }
-    //         myPrintf("\r\n");
-    //     }
+        // Print Matrix A
+        myPrintf("\r\nMatrix A:\r\n");
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                myPrintf("%d ", A[i][j]);
+            }
+            myPrintf("\r\n");
+        }
 
-    //     // Print Matrix B
-    //     myPrintf("\r\nMatrix B:\r\n");
-    //     for (int i = 0; i < 2; i++) {
-    //         for (int j = 0; j < 2; j++) {
-    //             myPrintf("%d ", B[i][j]);
-    //         }
-    //         myPrintf("\r\n");
-    //     }
+        // Print Matrix B
+        myPrintf("\r\nMatrix B:\r\n");
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                myPrintf("%d ", B[i][j]);
+            }
+            myPrintf("\r\n");
+        }
 
-    //     // Print Matrix C
-    //     myPrintf("\r\nMatrix C (A x B):\r\n");
-    //     for (int i = 0; i < 2; i++) {
-    //         for (int j = 0; j < 2; j++) {
-    //             myPrintf("%d ", C[i][j]);
-    //         }
-    //         myPrintf("\r\n");
-    //     }
+        // Print Matrix C
+        myPrintf("\r\nMatrix C (A x B):\r\n");
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                myPrintf("%d ", C[i][j]);
+            }
+            myPrintf("\r\n");
+        }
 
-    //     myPrintf("------\r\n");
+        myPrintf("------\r\n");
 
-    //     HAL_Delay(1000); // wait 1 second before printing again
+        HAL_Delay(1000); // wait 1 second before printing again
     myPrintf("\r\nArmstrong numbers between 100 and 999:\r\n");
 
         // loop through all 3-digit numbers
