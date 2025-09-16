@@ -72,11 +72,44 @@ static void MX_USB_PCD_Init(void);
   * @brief  The application entry point.
   * @retval int
   */
+ //TASK2
+// void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+// {
+//   if (htim->Instance == TIM2)   // check if TIM2 caused interrupt
+//   {
+//     HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_9);  // toggle LED (example: PE9)
+//   }
+// }
+//TASK3
+volatile uint32_t countA = 0;
+volatile uint32_t countB = 0;
+volatile uint32_t countC = 0;
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  if (htim->Instance == TIM2)   // check if TIM2 caused interrupt
+  if (htim->Instance == TIM2)
   {
-    HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_9);  // toggle LED (example: PE9)
+    countA++;
+    countB++;
+    countC++;
+
+    if (countA >= 500)   // 500 ms = 1 Hz blink
+    {
+      HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_9); // LED1
+      countA = 0;
+    }
+
+    if (countB >= 200)   // 200 ms = 2.5 Hz blink
+    {
+      HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_11); // LED2
+      countB = 0;
+    }
+
+    if (countC >= 100)   // 100 ms = 5 Hz blink
+    {
+      HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_13); // LED3
+      countC = 0;
+    }
   }
 }
 
@@ -110,6 +143,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
+  //TASK2 AND 3
   HAL_TIM_Base_Start_IT(&htim2);   // start TIM2 interrupt
   /* USER CODE END 2 */
 
@@ -280,7 +314,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 47999;
+  htim2.Init.Prescaler = 47;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
