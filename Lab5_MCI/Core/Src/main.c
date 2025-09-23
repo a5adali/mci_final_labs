@@ -72,8 +72,6 @@ static void MX_USB_PCD_Init(void);
   * @brief  The application entry point.
   * @retval int
   */
-uint32_t pwm_val = 0;
-int8_t step = 1;
 int main(void)
 {
 
@@ -104,23 +102,37 @@ int main(void)
   MX_TIM3_Init();
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
-
+  //task2
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   /* USER CODE END 2 */
-  //task1
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1); // Start PWM
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-    //task1
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, pwm_val);
+    //task2
+    // Forward
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);   // D8 = 1
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // D12 = 0
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 700);    // ~70% duty (0-999)
 
-    pwm_val += step;
-    if (pwm_val >= 1000) step = -1;   // reached max
-    else if (pwm_val == 0) step = 1;  // reached min
+    HAL_Delay(2000);
 
-    HAL_Delay(1);  // adjust for speed of fading
+    // Stop
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);      // duty = 0
+    HAL_Delay(1000);
+
+    // Reverse
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); // D8 = 0
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);   // D12 = 1
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 700);    // ~70% duty
+
+    HAL_Delay(2000);
+
+    // Stop
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+    HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -366,6 +378,9 @@ static void MX_GPIO_Init(void)
                           |LD7_Pin|LD9_Pin|LD10_Pin|LD8_Pin
                           |LD6_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+
   /*Configure GPIO pins : DRDY_Pin MEMS_INT3_Pin MEMS_INT4_Pin MEMS_INT1_Pin
                            MEMS_INT2_Pin */
   GPIO_InitStruct.Pin = DRDY_Pin|MEMS_INT3_Pin|MEMS_INT4_Pin|MEMS_INT1_Pin
@@ -390,6 +405,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA8 PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
