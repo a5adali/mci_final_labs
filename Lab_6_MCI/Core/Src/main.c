@@ -18,19 +18,54 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include <stdio.h>
+#include "stdio.h"
 
-#define SAMPLE_SIZE 16   // number of periods for averaging
+TIM_HandleTypeDef htim2;
+UART_HandleTypeDef huart2;
 
-uint32_t timer_val1 = 0;
-uint32_t timer_val2 = 0;
-uint32_t periods[SAMPLE_SIZE];
-uint8_t capture_index = 0;
-uint8_t capture_done = 0;
-uint8_t first_capture = 1;
-uint8_t print_flag = 0;
+uint32_t ic_val1 = 0;
+uint32_t ic_val2 = 0;
+uint32_t difference = 0;
+uint8_t is_first_captured = 0;
+float frequency = 0;
 
+// UART printf support
+int _write(int file, char *ptr, int len)
+{
+    HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+    return len;
+}
 
+// Callback jab capture interrupt fire hota hai
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+    {
+        if (is_first_captured == 0)
+        {
+            ic_val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);  // first edge
+            is_first_captured = 1;
+        }
+        else
+        {
+            ic_val2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);  // second edge
+
+            if (ic_val2 > ic_val1)
+                difference = ic_val2 - ic_val1;
+            else
+                difference = (0xFFFF - ic_val1) + ic_val2; // counter overflow case
+
+            // Tick = 1 µs → period in microseconds
+            // Frequency = 1 / (period in seconds)
+            // period (µs) = difference * 1µs
+            frequency = 1000000.0f / difference;  
+
+            printf("Frequency = %.2f Hz\r\n", frequency);
+
+            is_first_captured = 0; // reset for next measurement
+        }
+    }
+}
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -90,37 +125,6 @@ static void MX_USART2_UART_Init(void);
   * @brief  The application entry point.
   * @retval int
   */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    if (GPIO_Pin == GPIO_PIN_1)   // PA1
-    {
-        if (first_capture)
-        {
-            __HAL_TIM_SET_COUNTER(&htim2, 0);  // reset TIM2
-            HAL_TIM_Base_Start(&htim2);        // start TIM2
-            first_capture = 0;
-        }
-        else
-        {
-            timer_val2 = __HAL_TIM_GET_COUNTER(&htim2); // read TIM2
-            HAL_TIM_Base_Stop(&htim2);
-
-            periods[capture_index++] = timer_val2;  // store measured period
-
-            if (capture_index >= SAMPLE_SIZE)
-            {
-                capture_done = 1;
-                capture_index = 0;
-                print_flag = 1;
-            }
-
-            // Prepare for next measurement
-            __HAL_TIM_SET_COUNTER(&htim2, 0);
-            HAL_TIM_Base_Start(&htim2);
-        }
-    }
-}
-
 int main(void)
 {
 
@@ -158,31 +162,13 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
   while (1)
-{
-    HAL_Delay(100);  // check every 100 ms
+  {
+    /* USER CODE END WHILE */
 
-    if (print_flag)
-    {
-        uint64_t sum = 0;
-        for (int i = 0; i < SAMPLE_SIZE; i++)
-        {
-            sum += periods[i];
-        }
-        uint32_t avg_period = sum / SAMPLE_SIZE;
-
-        // Frequency formula
-        // f = (8 MHz) / (2 * avg_period)
-        float frequency = (4800000.0f) / avg_period;
-
-        // (optional) add error margin if required
-        printf("Measured frequency: %d Hz\r\n", (int)frequency);
-
-        print_flag = 0;
-        first_capture = 1;  // restart capture process
-    }
-}
-
+    /* USER CODE BEGIN 3 */
+  }
   /* USER CODE END 3 */
 }
 
@@ -253,7 +239,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x2000090E;
+  hi2c1.Init.Timing = 0x00201D2B;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -339,12 +325,13 @@ static void MX_TIM2_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 9;
+  htim2.Init.Prescaler = 71;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -358,9 +345,21 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -534,11 +533,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-int _write(int file, char *ptr, int len)
-{
-    HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, HAL_MAX_DELAY);
-    return len;
-}
 
 /* USER CODE END 4 */
 
