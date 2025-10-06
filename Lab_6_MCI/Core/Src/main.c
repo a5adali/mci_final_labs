@@ -19,53 +19,15 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stdio.h"
-
-TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 UART_HandleTypeDef huart2;
+#define PPR 20  // update based on your encoder specification
 
-uint32_t ic_val1 = 0;
-uint32_t ic_val2 = 0;
-uint32_t difference = 0;
-uint8_t is_first_captured = 0;
-float frequency = 0;
-
-// UART printf support
-int _write(int file, char *ptr, int len)
-{
+int _write(int file, char *ptr, int len) {
     HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, HAL_MAX_DELAY);
     return len;
 }
 
-// Callback jab capture interrupt fire hota hai
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-    {
-        if (is_first_captured == 0)
-        {
-            ic_val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);  // first edge
-            is_first_captured = 1;
-        }
-        else
-        {
-            ic_val2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);  // second edge
-
-            if (ic_val2 > ic_val1)
-                difference = ic_val2 - ic_val1;
-            else
-                difference = (0xFFFF - ic_val1) + ic_val2; // counter overflow case
-
-            // Tick = 1 µs → period in microseconds
-            // Frequency = 1 / (period in seconds)
-            // period (µs) = difference * 1µs
-            frequency = 1000000.0f / difference;  
-
-            printf("Frequency = %.2f Hz\r\n", frequency);
-
-            is_first_captured = 0; // reset for next measurement
-        }
-    }
-}
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -93,6 +55,7 @@ I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
@@ -112,6 +75,7 @@ static void MX_TIM2_Init(void);
 static void MX_USB_PCD_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -149,6 +113,9 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);   // IN1 = HIGH
+HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // IN2 = LOW
+
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
@@ -156,19 +123,58 @@ int main(void)
   MX_USB_PCD_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 // printf("USART2 working...\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
-  while (1)
-  {
-    /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-  }
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
+ 
+  HAL_TIM_Base_Start(&htim3);
+   // Set motor speed
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 500); // 50% duty
+    printf("Encoder Polling Test Start\r\n");
+
+    uint32_t t1 = 0, t2 = 0;
+    uint32_t captured_ticks = 0;
+    float frequency = 0.0;
+    float rpm = 0.0;
+    uint8_t prev_state = 0, curr_state = 0;
+
+    while (1)
+    {
+        // Read current encoder signal
+        curr_state = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0);
+
+        // Detect falling edge (1 -> 0)
+        if (prev_state == 1 && curr_state == 0)
+        {
+            if (t1 == 0)
+            {
+                __HAL_TIM_SET_COUNTER(&htim3, 0); // start timing
+                t1 = 1;
+            }
+            else
+            {
+                t2 = __HAL_TIM_GET_COUNTER(&htim3);
+                __HAL_TIM_SET_COUNTER(&htim3, 0); // reset timer for next cycle
+
+                captured_ticks = t2; // time between two pulses in microseconds
+                frequency = 1000000.0 / captured_ticks;  // since 1 tick = 1 µs
+                rpm = (60.0 * frequency) / PPR;
+
+                printf("Freq: %.2f Hz | RPM: %.2f\r\n", frequency, rpm);
+
+                HAL_Delay(200);
+            }
+        }
+
+        prev_state = curr_state;
+    }
   /* USER CODE END 3 */
 }
 
@@ -331,7 +337,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 47;
+  htim2.Init.Prescaler = 71;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -366,6 +372,54 @@ static void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 47;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_IC_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
 
 }
 
@@ -487,6 +541,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
@@ -522,6 +577,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PD0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
