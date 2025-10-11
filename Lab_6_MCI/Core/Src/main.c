@@ -157,16 +157,27 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+//   if (HAL_UART_Init(&huart2) != HAL_OK)
+// {
+//     printf("UART Init Failed\r\n");
+// }
+// else
+// {
+//     printf("UART Init Success\r\n");
+// }
+
 // printf("USART2 working...\r\n");
+// HAL_Delay(100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+
   while (1)
   {
     /* USER CODE END WHILE */
-
+    // printf("USART2 working...\r\n");
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
