@@ -11,7 +11,7 @@
   *
   * This software is licensed under terms that can be found in the LICENSE file
   * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
+  * If no LICENSE file comes with this software, it is proided AS-IS.
   *
   ******************************************************************************
   */
@@ -125,11 +125,22 @@ HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // IN2 = LOW
   MX_USART2_UART_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+//   if (HAL_UART_Init(&huart2) != HAL_OK)
+// {
+//     printf("UART Init Failed\r\n");
+// }
+// else
+// {
+//     printf("UART Init Success\r\n");
+// }
+
 // printf("USART2 working...\r\n");
+// HAL_Delay(100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+<<<<<<< HEAD
 
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
@@ -175,6 +186,16 @@ HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // IN2 = LOW
 
         prev_state = curr_state;
     }
+=======
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+
+  while (1)
+  {
+    /* USER CODE END WHILE */
+    // printf("USART2 working...\r\n");
+    /* USER CODE BEGIN 3 */
+  }
+>>>>>>> 030defd (Added mci_final_labs files)
   /* USER CODE END 3 */
 }
 
