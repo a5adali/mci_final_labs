@@ -68,10 +68,12 @@ static void MX_USART1_UART_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 /* User variables */
-const uint8_t LSM303AGR_7BIT_ADDR = 0x33;    // 7-bit address
-const uint8_t LSM303AGR_WHO_AM_I = 0x0F;     // WHO_AM_I register
-uint8_t dev_addr;                            // 8-bit HAL device address (7-bit << 1)
+// const uint8_t LSM303AGR_7BIT_ADDR = 0x33;    // 7-bit address
+// const uint8_t LSM303AGR_WHO_AM_I = 0x0F;     // WHO_AM_I register
+// uint8_t dev_addr;                            // 8-bit HAL device address (7-bit << 1)
 uint8_t whoami = 0;
+#define LSM_A_ADDR_8 (0x19u << 1)
+#define LSM_A_WHOAMI 0x0F
 char msg[80];
 /* USER CODE END PFP */
 
@@ -103,7 +105,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  dev_addr = (uint8_t)(LSM303AGR_7BIT_ADDR << 1); // HAL wants 8-bit address
+  // dev_addr = (uint8_t)(LSM303AGR_7BIT_ADDR << 1); // HAL wants 8-bit address
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -138,8 +140,8 @@ int main(void)
 while (1)
   {
     HAL_StatusTypeDef res = HAL_I2C_Mem_Read(&hi2c1,
-                                             dev_addr,
-                                             LSM303AGR_WHO_AM_I,
+                                             LSM_A_ADDR_8,
+                                             LSM_A_WHOAMI,
                                              I2C_MEMADD_SIZE_8BIT,
                                              &whoami,
                                              1,
