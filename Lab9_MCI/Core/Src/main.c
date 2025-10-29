@@ -82,6 +82,7 @@ static void MX_USB_PCD_Init(void);
 #define GYRO_CS_LOW()       HAL_GPIO_WritePin(GYRO_CS_GPIO_Port, GYRO_CS_Pin, GPIO_PIN_RESET)
 #define GYRO_CS_HIGH()      HAL_GPIO_WritePin(GYRO_CS_GPIO_Port, GYRO_CS_Pin, GPIO_PIN_SET)
 
+
 //GYROSCOPE
 /* ===== L3GD20 (on-board gyro) via SPI1 ===== */
 #define GYRO_REG_WHOAMI   0x0F   // expect 0xD4 or 0xD7
@@ -143,7 +144,23 @@ static void gyro_read(gyro_t *g) {
   g->gy = y * GYRO_SENS_250DPS;
   g->gz = z * GYRO_SENS_250DPS;
 }
-
+//task3
+static void deg_to_text(char *dst, size_t n, float deg){
+  int32_t mdeg = (int32_t)((deg>=0)?(deg*1000.0f+0.5f):(deg*1000.0f-0.5f));
+  int32_t s = (mdeg<0); if(s) mdeg=-mdeg;
+  int32_t i = mdeg/1000, f = mdeg%1000;
+  if(s) snprintf(dst,n,"-%ld.%03ld",(long)i,(long)f);
+  else  snprintf(dst,n, "%ld.%03ld",(long)i,(long)f);
+}
+static float gyro_calibrate_bias_x(int samples, int delay_ms){
+  gyro_t g; float sum = 0.0f;
+  for(int i=0;i<samples;i++){
+    gyro_read(&g);
+    sum += g.gx;           // degrees/second
+    HAL_Delay(delay_ms);
+  }
+  return sum / samples;    // °/s bias
+}
 
 static void dps_to_text(char *dst, size_t n, float dps){
   int32_t mdps = (int32_t)((dps>=0)?(dps*1000.0f+0.5f):(dps*1000.0f-0.5f));
@@ -354,9 +371,20 @@ LSM_Accel_Calibrate(&a, 20);
 uint8_t gid = gyro_read_u8(GYRO_REG_WHOAMI);   // expect 0xD4 or 0xD7
 printf("Gyro WHO_AM_I=0x%02X\r\n", gid);
 gyro_init();
+/* --- Gyro bias calibration (keep board still) --- */
+uart_print("Calibrating gyro bias... keep board still (about 2s)\r\n");
+float gyro_bias_x = gyro_calibrate_bias_x(200, 10);  // ~2 seconds
+char bias_txt[16]; dps_to_text(bias_txt, sizeof bias_txt, gyro_bias_x);
+char line0[64]; snprintf(line0, sizeof line0, "GyroX bias=%s dps\r\n", bias_txt);
+uart_print(line0);
+
+/* --- Angle integrator state --- */
+float angle_x = 0.0f;                   // degrees
+uint32_t t_prev = HAL_GetTick();        // ms
+
 /* Stream CSV every ~100 ms: ax, ay, az in g */
-gyro_t g;
-while (1) {
+// gyro_t g;
+// while (1) {
 
 //   lsm_acc_t m = acc;  // copy to use stored offsets
 //   if (LSM_Accel_Read(&m) == HAL_OK) {
@@ -400,20 +428,49 @@ while (1) {
     // HAL_Delay(1000);
   // }
     /* USER CODE BEGIN 3 */
-  gyro_read(&g);
+  // gyro_read(&g);
 
-  /* read accel and use Y */
-  LSM_Accel_Read(&a);   // 'a' already holds offsets from calibration
+  // /* read accel and use Y */
+  // LSM_Accel_Read(&a);   // 'a' already holds offsets from calibration
 
-  /* print: gx (dps), ay (g) using integer-only formatting */
-  char gx_txt[16], ay_txt[16], line[64];
+  // /* print: gx (dps), ay (g) using integer-only formatting */
+  // char gx_txt[16], ay_txt[16], line[64];
+  // dps_to_text(gx_txt, sizeof gx_txt, g.gx);
+  // g_to_text(ay_txt, sizeof ay_txt, a.ay);
+  // snprintf(line, sizeof line, "GyroX=%s dps, AccY=%s g\r\n", gx_txt, ay_txt);
+  // uart_print(line);
+
+  // HAL_Delay(100);
+  // }
+  //task3
+  gyro_t g;
+  while (1) {
+  /* time step */
+  uint32_t t_now = HAL_GetTick();
+  float dt = (t_now - t_prev) * 0.001f;    // seconds
+  t_prev = t_now;
+
+  /* read sensors */
+  gyro_read(&g);           // g.gx in °/s
+  LSM_Accel_Read(&a);      // a.ay in g (already offset-corrected by your calib)
+
+  /* integrate gyro to angle (degrees) with bias removal */
+  float gx_nobias = g.gx - gyro_bias_x;    // °/s
+  angle_x += gx_nobias * dt;               // °
+
+  /* format & print: GyroX(dps), AccY(g), AngleX(deg) */
+  char gx_txt[16], ay_txt[16], ang_txt[16], line[96];
   dps_to_text(gx_txt, sizeof gx_txt, g.gx);
-  g_to_text(ay_txt, sizeof ay_txt, a.ay);
-  snprintf(line, sizeof line, "GyroX=%s dps, AccY=%s g\r\n", gx_txt, ay_txt);
+  g_to_text(ay_txt,  sizeof ay_txt,  a.ay);
+  deg_to_text(ang_txt, sizeof ang_txt, angle_x);
+
+  snprintf(line, sizeof line,
+           "GyroX=%s dps, AccY=%s g, AngleX=%s deg\r\n",
+           gx_txt, ay_txt, ang_txt);
   uart_print(line);
 
-  HAL_Delay(100);
-  }
+  HAL_Delay(10);  // ~100 Hz
+}
   /* USER CODE END 3 */
 }
 /**
