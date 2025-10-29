@@ -18,6 +18,100 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdio.h>
+#include <stdint.h>
+
+extern SPI_HandleTypeDef hspi1;    // change if you use another SPI handle
+extern UART_HandleTypeDef huart1;  // change if you use another UART handle
+
+/* -- Adjust CS pin to whichever GPIO you wired as CS -- */
+#define GYRO_CS_PORT GPIOA
+#define GYRO_CS_PIN  GPIO_PIN_4
+
+/* I3G4250D registers */
+#define I3G_OUT_TEMP   0x26
+#define I3G_OUT_X_L    0x28
+#define I3G_CTRL_REG1  0x20
+#define I3G_CTRL_REG4  0x23
+
+/* ST SPI read/autoincrement bits */
+#define SPI_READ_BIT       0x80U
+#define SPI_AUTOINCR_BIT   0x40U
+
+#define GYRO_SENS_245DPS  (0.00875f)  // dps per LSB
+
+static inline void gyro_cs_low(void)  { HAL_GPIO_WritePin(GYRO_CS_PORT, GYRO_CS_PIN, GPIO_PIN_RESET); }
+static inline void gyro_cs_high(void) { HAL_GPIO_WritePin(GYRO_CS_PORT, GYRO_CS_PIN, GPIO_PIN_SET); }
+
+/* Initialize gyro: power on and enable X/Y/Z */
+void gyro_init(void)
+{
+    uint8_t tx[2];
+    tx[0] = I3G_CTRL_REG1 & 0x7F; // write
+    tx[1] = 0x0F;                 // 00001111: power on and enable X/Y/Z
+
+    gyro_cs_low();
+    HAL_SPI_Transmit(&hspi1, tx, 2, HAL_MAX_DELAY);
+    gyro_cs_high();
+
+    /* Optional: CTRL_REG4 to set FS (default 00 => +/-245 dps) */
+    // uint8_t tx2[2] = { I3G_CTRL_REG4 & 0x7F, 0x00 };
+    // gyro_cs_low(); HAL_SPI_Transmit(&hspi1, tx2, 2, HAL_MAX_DELAY); gyro_cs_high();
+}
+
+/* Read a single register */
+static HAL_StatusTypeDef gyro_read_reg(uint8_t reg, uint8_t *data)
+{
+    uint8_t tx = reg | SPI_READ_BIT;
+    uint8_t rx = 0;
+
+    gyro_cs_low();
+    if (HAL_SPI_Transmit(&hspi1, &tx, 1, HAL_MAX_DELAY) != HAL_OK) { gyro_cs_high(); return HAL_ERROR; }
+    if (HAL_SPI_Receive(&hspi1, &rx, 1, HAL_MAX_DELAY) != HAL_OK) { gyro_cs_high(); return HAL_ERROR; }
+    gyro_cs_high();
+
+    *data = rx;
+    return HAL_OK;
+}
+
+/* Read multiple regs with auto-increment */
+static HAL_StatusTypeDef gyro_read_regs(uint8_t start_reg, uint8_t *buf, uint8_t len)
+{
+    uint8_t tx = start_reg | SPI_READ_BIT | SPI_AUTOINCR_BIT;
+
+    gyro_cs_low();
+    if (HAL_SPI_Transmit(&hspi1, &tx, 1, HAL_MAX_DELAY) != HAL_OK) { gyro_cs_high(); return HAL_ERROR; }
+    if (HAL_SPI_Receive(&hspi1, buf, len, HAL_MAX_DELAY) != HAL_OK) { gyro_cs_high(); return HAL_ERROR; }
+    gyro_cs_high();
+
+    return HAL_OK;
+}
+
+/* Read temperature and gyro outputs, convert, and send via UART */
+void gyro_read_and_transmit(void)
+{
+    uint8_t tmp8;
+    if (gyro_read_reg(I3G_OUT_TEMP, &tmp8) != HAL_OK) { return; }
+    int8_t temp_signed = (int8_t)tmp8;
+
+    uint8_t buf6[6];
+    if (gyro_read_regs(I3G_OUT_X_L, buf6, 6) != HAL_OK) { return; }
+
+    int16_t x_raw = (int16_t)((int16_t)buf6[1] << 8 | buf6[0]);
+    int16_t y_raw = (int16_t)((int16_t)buf6[3] << 8 | buf6[2]);
+    int16_t z_raw = (int16_t)((int16_t)buf6[5] << 8 | buf6[4]);
+
+    float x_dps = (float)x_raw * GYRO_SENS_245DPS;
+    float y_dps = (float)y_raw * GYRO_SENS_245DPS;
+    float z_dps = (float)z_raw * GYRO_SENS_245DPS;
+
+    char uart_buf[80];
+    int len = snprintf(uart_buf, sizeof(uart_buf), "%d, %.2f, %.2f, %.2f\r\n",
+                       (int)temp_signed, x_dps, y_dps, z_dps);
+    if (len > 0) {
+        HAL_UART_Transmit(&huart1, (uint8_t*)uart_buf, (uint16_t)len, HAL_MAX_DELAY);
+    }
+}
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -40,11 +134,11 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c1;
+// I2C_HandleTypeDef hi2c1;
 
-SPI_HandleTypeDef hspi1;
+// SPI_HandleTypeDef hspi1;
 
-UART_HandleTypeDef huart1;
+// UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
@@ -53,7 +147,7 @@ UART_HandleTypeDef huart1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_I2C1_Init(void);
+// static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
@@ -96,7 +190,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C1_Init();
+  // MX_I2C1_Init();
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
@@ -112,10 +206,12 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  gyro_init();
   while (1)
   {
     /* USER CODE END WHILE */
-
+    gyro_read_and_transmit();
+    HAL_Delay(100);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -183,34 +279,34 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE BEGIN I2C1_Init 1 */
 
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00201D2B;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  /* USER CODE END I2C1_Init 1 */ 
+  // hi2c1.Instance = I2C1;
+  // hi2c1.Init.Timing = 0x00201D2B;
+  // hi2c1.Init.OwnAddress1 = 0;
+  // hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  // hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  // hi2c1.Init.OwnAddress2 = 0;
+  // hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  // hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  // hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  // if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  // {
+  //   Error_Handler();
+  // }
 
   /** Configure Analogue filter
-  */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  // */
+  // if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  // {
+  //   Error_Handler();
+  // }
 
-  /** Configure Digital filter
-  */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  // /** Configure Digital filter
+  // */
+  // if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  // {
+  //   Error_Handler();
+  // }
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
