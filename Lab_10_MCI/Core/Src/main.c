@@ -22,6 +22,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
+#include "heap_driver.h"
 /* USER CODE END Includes */
 
 
@@ -59,54 +60,52 @@ PCD_HandleTypeDef hpcd_USB_FS;
 // small helpers for Lab10 Task1 using huart1
 static void uart_print(const char *s)
 {
-  if (s == NULL) return;
+  if (!s) return;
   size_t len = strlen(s);
-  /* use a finite timeout to avoid blocking forever */
-  uint32_t timeout = 200; /* ms — change as appropriate */
-  HAL_StatusTypeDef st = HAL_UART_Transmit(&huart1, (uint8_t*)s, (uint16_t)len, timeout);
-  (void)st; /* optionally check and handle error */
-} 
-
-static void print_int_array(const char* name, int *arr, size_t n)
-{
-  if (name == NULL || (n > 0 && arr == NULL)) return;
-
-  char buf[128];
-  int rem = (int)sizeof(buf);
-  int written = snprintf(buf, (size_t)rem, "%s: [", name);
-  if (written < 0) return;
-  if (written >= rem) written = rem - 1;
-  rem -= written;
-  int pos = written;
-
-  for (size_t i = 0; i < n && rem > 16; ++i) {
-    int w = snprintf(buf + pos, (size_t)rem, "%d%s", arr[i], (i + 1 == n) ? "" : ", ");
-    if (w < 0) break;
-    if (w >= rem) { /* truncated */
-      pos += rem - 1;
-      rem = 1;
-      break;
-    }
-    pos += w;
-    rem -= w;
-  }
-
-  if (rem > 3) {
-    int w = snprintf(buf + pos, (size_t)rem, "]\r\n");
-    if (w > 0) { pos += (w < rem) ? w : rem - 1; }
-  } else {
-    /* ensure buffer ends with newline if possible */
-    if (pos < (int)sizeof(buf) - 2) {
-      buf[pos++] = '\r';
-      buf[pos++] = '\n';
-      buf[pos] = '\0';
-    } else {
-      buf[sizeof(buf)-1] = '\0';
-    }
-  }
-
-  uart_print(buf);
+  if (len > 0xFFFFU) len = 0xFFFFU;
+  HAL_UART_Transmit(&huart1, (uint8_t*)s, (uint16_t)len, 1000);
 }
+
+// static void print_int_array(const char* name, int *arr, size_t n)
+// {
+//   if (name == NULL || (n > 0 && arr == NULL)) return;
+
+//   char buf[128];
+//   int rem = (int)sizeof(buf);
+//   int written = snprintf(buf, (size_t)rem, "%s: [", name);
+//   if (written < 0) return;
+//   if (written >= rem) written = rem - 1;
+//   rem -= written;
+//   int pos = written;
+
+//   for (size_t i = 0; i < n && rem > 16; ++i) {
+//     int w = snprintf(buf + pos, (size_t)rem, "%d%s", arr[i], (i + 1 == n) ? "" : ", ");
+//     if (w < 0) break;
+//     if (w >= rem) { /* truncated */
+//       pos += rem - 1;
+//       rem = 1;
+//       break;
+//     }
+//     pos += w;
+//     rem -= w;
+//   }
+
+//   if (rem > 3) {
+//     int w = snprintf(buf + pos, (size_t)rem, "]\r\n");
+//     if (w > 0) { pos += (w < rem) ? w : rem - 1; }
+//   } else {
+//     /* ensure buffer ends with newline if possible */
+//     if (pos < (int)sizeof(buf) - 2) {
+//       buf[pos++] = '\r';
+//       buf[pos++] = '\n';
+//       buf[pos] = '\0';
+//     } else {
+//       buf[sizeof(buf)-1] = '\0';
+//     }
+//   }
+
+//   uart_print(buf);
+// }
 /* USER CODE END PV */
 
 /* USER CODE END PV */
@@ -124,7 +123,7 @@ static void MX_USB_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+// uart_print("=== Custom Heap Driver ( Direct SRAM) ===\r\n");
 /* USER CODE END 0 */
 
 /**
@@ -162,44 +161,90 @@ int main(void)
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
   /* USER CODE BEGIN 2 */
-  uart_print("Lab10 Task1: dynamic memory demo\r\n");
+  /* inside USER CODE BEGIN 2 in main.c — replace your existing user-code there */
 
-  const size_t n = 10; // number of elements for the exercise (change if lab requires different)
+uart_print("=== Custom Heap Driver ( Direct SRAM) ===\r\n");
 
-  // 1) allocate with malloc()
-  int *A = malloc(n * sizeof *A);  if (A == NULL) {
-    uart_print("malloc failed\r\n");
-    while (1) { HAL_Delay(1000); }
-  }
+heap_init();
 
-  // initialize A: A[i] = i * 2
-  for (size_t i = 0; i < n; ++i) A[i] = (int)(i * 2);
+/* allocate a small block: 16 bytes */
+size_t small_size = 16; /* 1 block */
+void *blk1 = heap_alloc(small_size);
+if (blk1 == NULL) {
+  uart_print("Failed to allocate block 1\r\n");
+} else {
+  const char *msg1 = "Data in Block 1";
+  /* copy safely: leave room for terminating NUL */
+  size_t max_copy = (small_size > 0) ? (small_size - 1) : 0;
+  size_t copy_len = strlen(msg1);
+  if (copy_len > max_copy) copy_len = max_copy;
+  memcpy(blk1, msg1, copy_len);
+  ((char*)blk1)[copy_len] = '\0'; /* ensure NUL termination */
 
-  // 2) allocate with calloc()
-  int *B = calloc(n, sizeof *B);  if (B == NULL) {
-    uart_print("calloc failed\r\n");
-    free(A);
-    A = NULL;
-    while (1) { HAL_Delay(1000); }
-  }
+  uart_print((const char *)blk1);
+  uart_print("\r\n");
+}
 
-  // print initial arrays
-  print_int_array("A (after init)", A, n);
-  print_int_array("B (after calloc, before assign)", B, n);
+/* allocate a larger block: 32 bytes (2 blocks) */
+size_t large_size = 32; /* 2 blocks */
+void *blk2 = heap_alloc(large_size);
+if (blk2 == NULL) {
+  uart_print("Failed to allocate block 2\r\n");
+} else {
+  const char *msg2 = "Text from Block 2";
+  size_t max_copy2 = (large_size > 0) ? (large_size - 1) : 0;
+  size_t copy_len2 = strlen(msg2);
+  if (copy_len2 > max_copy2) copy_len2 = max_copy2;
+  memcpy(blk2, msg2, copy_len2);
+  ((char*)blk2)[copy_len2] = '\0'; /* ensure NUL termination */
 
-  // assign B[i] = i + 1
-  for (size_t i = 0; i < n; ++i) B[i] = (int)(i + 1);
+  /* print just the stored string */
+  uart_print((const char *)blk2);
+  uart_print("\r\n");
+}
 
-  print_int_array("B (after assign)", B, n);
+/* Free allocations */
+if (blk1) heap_free(blk1);
+if (blk2) heap_free(blk2);
 
-  // free and nullify
-  free(A);
-  A = NULL;
-  free(B);
-  B = NULL;
+uart_print("Blocks freed.\r\n");
 
-  uart_print("Memory freed and pointers set to NULL.\r\n");
-  uart_print("Task 1 completed.\r\n");
+  // const size_t n = 10; // number of elements for the exercise (change if lab requires different)
+
+  // // 1) allocate with malloc()
+  // int *A = malloc(n * sizeof *A);  if (A == NULL) {
+  //   uart_print("malloc failed\r\n");
+  //   while (1) { HAL_Delay(1000); }
+  // }
+
+  // // initialize A: A[i] = i * 2
+  // for (size_t i = 0; i < n; ++i) A[i] = (int)(i * 2);
+
+  // // 2) allocate with calloc()
+  // int *B = calloc(n, sizeof *B);  if (B == NULL) {
+  //   uart_print("calloc failed\r\n");
+  //   free(A);
+  //   A = NULL;
+  //   while (1) { HAL_Delay(1000); }
+  // }
+
+  // // print initial arrays
+  // print_int_array("A (after init)", A, n);
+  // print_int_array("B (after calloc, before assign)", B, n);
+
+  // // assign B[i] = i + 1
+  // for (size_t i = 0; i < n; ++i) B[i] = (int)(i + 1);
+
+  // print_int_array("B (after assign)", B, n);
+
+  // // free and nullify
+  // free(A);
+  // A = NULL;
+  // free(B);
+  // B = NULL;
+
+  // uart_print("Memory freed and pointers set to NULL.\r\n");
+  // uart_print("Task 1 completed.\r\n");
 /* USER CODE END 2 */
 
   /* USER CODE END 2 */

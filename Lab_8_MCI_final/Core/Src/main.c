@@ -502,7 +502,7 @@ static void MX_GPIO_Init(void)
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-void Error_Handler(void)
+void Error_Handler(void)t
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
@@ -553,7 +553,7 @@ void Error_Handler(void)
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-/* USER CODE END PTD */
+/* USER CODE END PTD */t
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
