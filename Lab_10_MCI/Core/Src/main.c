@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include "heap_driver.h"
 /* USER CODE END Includes */
 
 
@@ -151,53 +152,74 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USB_PCD_Init();
 
+
+  //TASK2
+uart_print("=== Custom Heap Driver (Direct SRAM) ===\r\n");
+
+heap_init();
+
+char *block1 = heap_alloc(20);   // first allocation
+char *block2 = heap_alloc(40);   // second allocation
+
+if (block1) strcpy(block1, "Data in Block 1");
+if (block2) strcpy(block2, "Text from Block 2");
+
+uart_print(block1);
+uart_print("\r\n");
+uart_print(block2);
+uart_print("\r\n");
+
+heap_free(block1);
+heap_free(block2);
+
+uart_print("Blocks freed.\r\n");
   /* USER CODE BEGIN 2 */
-  uart_print("Lab10 Task1: dynamic memory demo\r\n");
+  // uart_print("Lab10 Task1: dynamic memory demo\r\n");
 
-  const size_t n = 10; // number of elements for the exercise (change if lab requires different)
+  // const size_t n = 10; // number of elements for the exercise (change if lab requires different)
 
-  /* 1) allocate with malloc() - no cast in C, use sizeof *A for safety */
-  int *A = malloc(n * sizeof *A);
-  if (A == NULL) {
-    uart_print("malloc failed\r\n");
-    while (1) { HAL_Delay(1000); }
-  }
+  // /* 1) allocate with malloc() - no cast in C, use sizeof *A for safety */
+  // int *A = malloc(n * sizeof *A);
+  // if (A == NULL) {
+  //   uart_print("malloc failed\r\n");
+  //   while (1) { HAL_Delay(1000); }
+  // }
 
-  /* initialize A: A[i] = i * 2 */
-  for (size_t i = 0; i < n; ++i) A[i] = (int)(i * 2);
+  // /* initialize A: A[i] = i * 2 */
+  // for (size_t i = 0; i < n; ++i) A[i] = (int)(i * 2);
 
-  /* 2) allocate with calloc() */
-  int *B = calloc(n, sizeof *B);
-  if (B == NULL) {
-    uart_print("calloc failed\r\n");
-    free(A);
-    A = NULL;
-    while (1) { HAL_Delay(1000); }
-  }
+  // /* 2) allocate with calloc() */
+  // int *B = calloc(n, sizeof *B);
+  // if (B == NULL) {
+  //   uart_print("calloc failed\r\n");
+  //   free(A);
+  //   A = NULL;
+  //   while (1) { HAL_Delay(1000); }
+  // }
 
-  /* print initial arrays */
-  print_int_array("A (after init)", A, n);
-  print_int_array("B (after calloc, before assign)", B, n);
+  // /* print initial arrays */
+  // print_int_array("A (after init)", A, n);
+  // print_int_array("B (after calloc, before assign)", B, n);
 
-  /* assign B[i] = i + 1 */
-  for (size_t i = 0; i < n; ++i) B[i] = (int)(i + 1);
+  // /* assign B[i] = i + 1 */
+  // for (size_t i = 0; i < n; ++i) B[i] = (int)(i + 1);
 
-  print_int_array("B (after assign)", B, n);
+  // print_int_array("B (after assign)", B, n);
 
-  /* free and nullify */
-  free(A);
-  A = NULL;
-  free(B);
-  B = NULL;
+  // /* free and nullify */
+  // free(A);
+  // A = NULL;
+  // free(B);
+  // B = NULL;
 
-  uart_print("Memory freed and pointers set to NULL.\r\n");
-  uart_print("Task 1 completed.\r\n");
+  // uart_print("Memory freed and pointers set to NULL.\r\n");
+  // uart_print("Task 1 completed.\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   while (1)
   {
-    uart_print("testing\r\n");
+    // uart_print("testing\r\n");
     HAL_Delay(1000);
   }
 }
