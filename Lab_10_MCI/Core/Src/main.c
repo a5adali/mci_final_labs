@@ -19,10 +19,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 /* USER CODE BEGIN Includes */
-#include "stdlib.h"
-#include "stdio.h"
-#include "string.h"
-#include "heap_driver.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 /* USER CODE END Includes */
 
 
@@ -56,58 +56,61 @@ UART_HandleTypeDef huart1;
 PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
-/* USER CODE BEGIN PV */
-// small helpers for Lab10 Task1 using huart1
+/* small helpers for Lab10 Task1 using huart1 -- safer versions */
 static void uart_print(const char *s)
 {
-  if (!s) return;
+  if (s == NULL) return;
   size_t len = strlen(s);
+
+  /* avoid overflow when casting to uint16_t (HAL uses uint16_t size param) */
   if (len > 0xFFFFU) len = 0xFFFFU;
-  HAL_UART_Transmit(&huart1, (uint8_t*)s, (uint16_t)len, 1000);
+
+  /* use a finite timeout to avoid blocking forever (increase as needed) */
+  uint32_t timeout = 1000; /* ms */
+  HAL_StatusTypeDef st = HAL_UART_Transmit(&huart1, (uint8_t*)s, (uint16_t)len, timeout);
+  (void)st; /* optionally check and handle error */
 }
 
-// static void print_int_array(const char* name, int *arr, size_t n)
-// {
-//   if (name == NULL || (n > 0 && arr == NULL)) return;
+static void print_int_array(const char* name, int *arr, size_t n)
+{
+  if (name == NULL || (n > 0 && arr == NULL)) return;
 
-//   char buf[128];
-//   int rem = (int)sizeof(buf);
-//   int written = snprintf(buf, (size_t)rem, "%s: [", name);
-//   if (written < 0) return;
-//   if (written >= rem) written = rem - 1;
-//   rem -= written;
-//   int pos = written;
+  char buf[256];
+  int rem = (int)sizeof(buf);
+  int written = snprintf(buf, (size_t)rem, "%s: [", name);
+  if (written < 0) return;
+  if (written >= rem) written = rem - 1;
+  rem -= written;
+  int pos = written;
 
-//   for (size_t i = 0; i < n && rem > 16; ++i) {
-//     int w = snprintf(buf + pos, (size_t)rem, "%d%s", arr[i], (i + 1 == n) ? "" : ", ");
-//     if (w < 0) break;
-//     if (w >= rem) { /* truncated */
-//       pos += rem - 1;
-//       rem = 1;
-//       break;
-//     }
-//     pos += w;
-//     rem -= w;
-//   }
+  for (size_t i = 0; i < n && rem > 16; ++i) {
+    int w = snprintf(buf + pos, (size_t)rem, "%d%s", arr[i], (i + 1 == n) ? "" : ", ");
+    if (w < 0) break;
+    if (w >= rem) { /* truncated */
+      pos += rem - 1;
+      rem = 1;
+      break;
+    }
+    pos += w;
+    rem -= w;
+  }
 
-//   if (rem > 3) {
-//     int w = snprintf(buf + pos, (size_t)rem, "]\r\n");
-//     if (w > 0) { pos += (w < rem) ? w : rem - 1; }
-//   } else {
-//     /* ensure buffer ends with newline if possible */
-//     if (pos < (int)sizeof(buf) - 2) {
-//       buf[pos++] = '\r';
-//       buf[pos++] = '\n';
-//       buf[pos] = '\0';
-//     } else {
-//       buf[sizeof(buf)-1] = '\0';
-//     }
-//   }
+  if (rem > 3) {
+    int w = snprintf(buf + pos, (size_t)rem, "]\r\n");
+    if (w > 0) { pos += (w < rem) ? w : rem - 1; }
+  } else {
+    /* ensure buffer ends with newline if possible */
+    if (pos < (int)sizeof(buf) - 2) {
+      buf[pos++] = '\r';
+      buf[pos++] = '\n';
+      buf[pos] = '\0';
+    } else {
+      buf[sizeof(buf)-1] = '\0';
+    }
+  }
 
-//   uart_print(buf);
-// }
-/* USER CODE END PV */
-
+  uart_print(buf);
+}
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -123,7 +126,7 @@ static void MX_USB_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// uart_print("=== Custom Heap Driver ( Direct SRAM) ===\r\n");
+
 /* USER CODE END 0 */
 
 /**
@@ -133,25 +136,13 @@ static void MX_USB_PCD_Init(void);
 int main(void)
 {
 
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
   /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -159,106 +150,56 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   MX_USB_PCD_Init();
+
   /* USER CODE BEGIN 2 */
-  /* USER CODE BEGIN 2 */
-  /* inside USER CODE BEGIN 2 in main.c — replace your existing user-code there */
+  uart_print("Lab10 Task1: dynamic memory demo\r\n");
 
-uart_print("=== Custom Heap Driver ( Direct SRAM) ===\r\n");
+  const size_t n = 10; // number of elements for the exercise (change if lab requires different)
 
-heap_init();
+  /* 1) allocate with malloc() - no cast in C, use sizeof *A for safety */
+  int *A = malloc(n * sizeof *A);
+  if (A == NULL) {
+    uart_print("malloc failed\r\n");
+    while (1) { HAL_Delay(1000); }
+  }
 
-/* allocate a small block: 16 bytes */
-size_t small_size = 16; /* 1 block */
-void *blk1 = heap_alloc(small_size);
-if (blk1 == NULL) {
-  uart_print("Failed to allocate block 1\r\n");
-} else {
-  const char *msg1 = "Data in Block 1";
-  /* copy safely: leave room for terminating NUL */
-  size_t max_copy = (small_size > 0) ? (small_size - 1) : 0;
-  size_t copy_len = strlen(msg1);
-  if (copy_len > max_copy) copy_len = max_copy;
-  memcpy(blk1, msg1, copy_len);
-  ((char*)blk1)[copy_len] = '\0'; /* ensure NUL termination */
+  /* initialize A: A[i] = i * 2 */
+  for (size_t i = 0; i < n; ++i) A[i] = (int)(i * 2);
 
-  uart_print((const char *)blk1);
-  uart_print("\r\n");
-}
+  /* 2) allocate with calloc() */
+  int *B = calloc(n, sizeof *B);
+  if (B == NULL) {
+    uart_print("calloc failed\r\n");
+    free(A);
+    A = NULL;
+    while (1) { HAL_Delay(1000); }
+  }
 
-/* allocate a larger block: 32 bytes (2 blocks) */
-size_t large_size = 32; /* 2 blocks */
-void *blk2 = heap_alloc(large_size);
-if (blk2 == NULL) {
-  uart_print("Failed to allocate block 2\r\n");
-} else {
-  const char *msg2 = "Text from Block 2";
-  size_t max_copy2 = (large_size > 0) ? (large_size - 1) : 0;
-  size_t copy_len2 = strlen(msg2);
-  if (copy_len2 > max_copy2) copy_len2 = max_copy2;
-  memcpy(blk2, msg2, copy_len2);
-  ((char*)blk2)[copy_len2] = '\0'; /* ensure NUL termination */
+  /* print initial arrays */
+  print_int_array("A (after init)", A, n);
+  print_int_array("B (after calloc, before assign)", B, n);
 
-  /* print just the stored string */
-  uart_print((const char *)blk2);
-  uart_print("\r\n");
-}
+  /* assign B[i] = i + 1 */
+  for (size_t i = 0; i < n; ++i) B[i] = (int)(i + 1);
 
-/* Free allocations */
-if (blk1) heap_free(blk1);
-if (blk2) heap_free(blk2);
+  print_int_array("B (after assign)", B, n);
 
-uart_print("Blocks freed.\r\n");
+  /* free and nullify */
+  free(A);
+  A = NULL;
+  free(B);
+  B = NULL;
 
-  // const size_t n = 10; // number of elements for the exercise (change if lab requires different)
-
-  // // 1) allocate with malloc()
-  // int *A = malloc(n * sizeof *A);  if (A == NULL) {
-  //   uart_print("malloc failed\r\n");
-  //   while (1) { HAL_Delay(1000); }
-  // }
-
-  // // initialize A: A[i] = i * 2
-  // for (size_t i = 0; i < n; ++i) A[i] = (int)(i * 2);
-
-  // // 2) allocate with calloc()
-  // int *B = calloc(n, sizeof *B);  if (B == NULL) {
-  //   uart_print("calloc failed\r\n");
-  //   free(A);
-  //   A = NULL;
-  //   while (1) { HAL_Delay(1000); }
-  // }
-
-  // // print initial arrays
-  // print_int_array("A (after init)", A, n);
-  // print_int_array("B (after calloc, before assign)", B, n);
-
-  // // assign B[i] = i + 1
-  // for (size_t i = 0; i < n; ++i) B[i] = (int)(i + 1);
-
-  // print_int_array("B (after assign)", B, n);
-
-  // // free and nullify
-  // free(A);
-  // A = NULL;
-  // free(B);
-  // B = NULL;
-
-  // uart_print("Memory freed and pointers set to NULL.\r\n");
-  // uart_print("Task 1 completed.\r\n");
-/* USER CODE END 2 */
-
+  uart_print("Memory freed and pointers set to NULL.\r\n");
+  uart_print("Task 1 completed.\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-    // uart_print("testing\r\n");
+    uart_print("testing\r\n");
     HAL_Delay(1000);
-    /* USER CODE BEGIN 3 */
   }
-  /* USER CODE END 3 */
 }
 
 /**
@@ -318,14 +259,6 @@ void SystemClock_Config(void)
   */
 static void MX_I2C1_Init(void)
 {
-
-  /* USER CODE BEGIN I2C1_Init 0 */
-
-  /* USER CODE END I2C1_Init 0 */
-
-  /* USER CODE BEGIN I2C1_Init 1 */
-
-  /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
   hi2c1.Init.Timing = 0x2000090E;
   hi2c1.Init.OwnAddress1 = 0;
@@ -340,23 +273,15 @@ static void MX_I2C1_Init(void)
     Error_Handler();
   }
 
-  /** Configure Analogue filter
-  */
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     Error_Handler();
   }
 
-  /** Configure Digital filter
-  */
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN I2C1_Init 2 */
-
-  /* USER CODE END I2C1_Init 2 */
-
 }
 
 /**
@@ -366,19 +291,11 @@ static void MX_I2C1_Init(void)
   */
 static void MX_SPI1_Init(void)
 {
-
-  /* USER CODE BEGIN SPI1_Init 0 */
-
-  /* USER CODE END SPI1_Init 0 */
-
-  /* USER CODE BEGIN SPI1_Init 1 */
-
-  /* USER CODE END SPI1_Init 1 */
-  /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
+  /* 8-bit is a common default; change to 4-bit only if your device requires it */
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
@@ -393,10 +310,6 @@ static void MX_SPI1_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI1_Init 2 */
-
-  /* USER CODE END SPI1_Init 2 */
-
 }
 
 /**
@@ -406,14 +319,6 @@ static void MX_SPI1_Init(void)
   */
 static void MX_USART1_UART_Init(void)
 {
-
-  /* USER CODE BEGIN USART1_Init 0 */
-
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -428,10 +333,6 @@ static void MX_USART1_UART_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
-
 }
 
 /**
@@ -441,14 +342,6 @@ static void MX_USART1_UART_Init(void)
   */
 static void MX_USB_PCD_Init(void)
 {
-
-  /* USER CODE BEGIN USB_Init 0 */
-
-  /* USER CODE END USB_Init 0 */
-
-  /* USER CODE BEGIN USB_Init 1 */
-
-  /* USER CODE END USB_Init 1 */
   hpcd_USB_FS.Instance = USB;
   hpcd_USB_FS.Init.dev_endpoints = 8;
   hpcd_USB_FS.Init.speed = PCD_SPEED_FULL;
@@ -459,10 +352,6 @@ static void MX_USB_PCD_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USB_Init 2 */
-
-  /* USER CODE END USB_Init 2 */
-
 }
 
 /**
@@ -473,9 +362,6 @@ static void MX_USB_PCD_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-
-  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOE_CLK_ENABLE();
@@ -493,6 +379,8 @@ static void MX_GPIO_Init(void)
                            MEMS_INT2_Pin */
   GPIO_InitStruct.Pin = DRDY_Pin|MEMS_INT3_Pin|MEMS_INT4_Pin|MEMS_INT1_Pin
                           |MEMS_INT2_Pin;
+  /* Note: GPIO_MODE_EVT_RISING generates an event. If you intended to use
+     HAL_GPIO_EXTI_Callback(), switch to GPIO_MODE_IT_RISING and enable the EXTI IRQ. */
   GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
@@ -513,15 +401,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /* USER CODE END MX_GPIO_Init_2 */
 }
-
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
@@ -529,27 +409,17 @@ static void MX_GPIO_Init(void)
   */
 void Error_Handler(void)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+  /* Blink an LED or keep printing an error here if desired */
   while (1)
   {
+    /* simple blink or delay to indicate fatal error */
+    HAL_Delay(500);
   }
-  /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+  /* can print file/line info over UART if you want */
 }
 #endif /* USE_FULL_ASSERT */
